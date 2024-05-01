@@ -1,0 +1,79 @@
+1)SELECT sum(UnitPrice*Quantity) as SUMM
+FROM sales JOIN sales_items
+ON sales.SalesId = sales_items.SalesId
+WHERE ShipCountry = 'USA' AND strftime('%Y', SalesDate) == '2012' AND strftime('%m', SalesDate) >= '01' AND strftime('%m', SalesDate)<='03';
+
+SELECT sum(UnitPrice*Quantity) as SUMM
+FROM sales_items
+WHERE SalesId IN (SELECT sales.SalesId FROM sales 
+WHERE sales.ShipCountry = 'USA'
+AND strftime('%Y', SalesDate) == '2012' AND 
+strftime('%m', SalesDate) >= '01' AND strftime('%m', SalesDate)<='03');
+
+SELECT FirstName, LastName
+FROM customers
+WHERE Email NOT IN (SELECT Email FROM employees);
+
+2) select FirstName
+from customers 
+where customers.FirstName not in (
+    select customers.FirstName
+    from customers join employees
+    where customers.FirstName = employees.FirstName)
+group by customers.FirstName;
+
+select FirstName
+from customers
+where (customers.FirstName not in (
+    select employees.FirstName
+    from employees))
+group by customers.FirstName;
+
+select FirstName
+from customers
+group by customers.FirstName
+except 
+select FirstName from employees;
+
+3)Оба запроса будут возвращать разные результаты.  
+В первом запросе происходит объединение таблиц t1 и t2 по значению column1, после чего фильтруются только те строки, где значение column1 в таблице t1 равно 0. Таким образом, результатом будет набор строк, где column1 в t1 равно 0 и есть соответствующая пара в t2. 
+Второй запрос также объединяет таблицы t1 и t2 по значению column1, но имеет дополнительное условие, что column1 в таблице t1 должен быть равен 0. Это означает, что в результате будут строки, для которых column1 одновременно равен 0 в t1 и t2. 
+Если в таблице t1 есть строки, удовлетворяющие условию column1=0, и при этом есть соответствующие записи в таблице t2, то второй запрос может вернуть больше строк, чем первый. Если все соответствия найдены только в первом запросе, то первый запрос вернет больше строк.
+
+4)SELECT albums.Title as 'Название альбома', COUNT(tracks.TrackId) as 'Количество треков'
+FROM albums
+JOIN tracks ON albums.AlbumId = tracks.AlbumId
+GROUP BY albums.AlbumId;
+
+SELECT  COUNT(tracks.TrackId) as 'Количество треков'
+FROM tracks
+WHERE AlbumId IN (SELECT albums.AlbumId FROM albums) 
+GROUP BY tracks.AlbumId;
+
+5)SELECT customers.LastName, customers.FirstName
+FROM customers
+JOIN sales ON customers.CustomerId = sales.CustomerId
+WHERE sales.ShipCity = 'Berlin' AND  strftime('%Y', SalesDate) == '2009' AND customers.Country = 'Germany';
+
+6)SELECT customers.LastName, customers.CustomerId
+FROM customers
+JOIN sales ON customers.CustomerId = sales.CustomerId
+GROUP BY customers.CustomerId
+HAVING COUNT(sales.CustomerId) > 30;
+
+SELECT LastName
+FROM customers
+WHERE CustomerId IN (SELECT CustomerId FROM sales
+GROUP BY CustomerId
+HAVING COUNT(CustomerId) > 30);
+
+7)SELECT genres.Name as 'Жанр', AVG(tracks.UnitPrice) as 'Средняя цена трека'
+FROM genres
+JOIN tracks ON genres.GenreId = tracks.GenreId
+GROUP BY genres.Name;
+
+8)SELECT genres.Name as 'Жанр', AVG(tracks.UnitPrice) as 'Средняя цена трека'
+FROM genres
+JOIN tracks ON genres.GenreId = tracks.GenreId
+GROUP BY genres.Name
+HAVING AVG(tracks.UnitPrice) > 1;
