@@ -1,0 +1,103 @@
+#1 
+
+SELECT SUM(si.UnitPrice * si.Quantity) AS TotalSales
+FROM sales_items si
+JOIN sales s ON si.SalesId = s.SalesId
+WHERE s.ShipCountry = 'USA'
+AND strftime('%Y', s.SalesDate) = '2012'
+AND strftime('%m', s.SalesDate) BETWEEN '01' AND '03'
+
+SELECT SUM(UnitPrice * Quantity) AS TotalSales
+FROM sales_items
+WHERE SalesId IN (
+    SELECT SalesId
+    FROM sales
+    WHERE ShipCountry = 'USA'
+    AND strftime('%Y', SalesDate) = '2012'
+    AND strftime('%m', SalesDate) BETWEEN '01' AND '03'
+);
+
+#2 
+
+SELECT c.FirstName
+FROM customers c
+LEFT JOIN employees e ON c.FirstName = e.FirstName
+WHERE e.FirstName IS NULL
+GROUP BY c.FirstName;
+
+
+SELECT FirstName
+FROM customers
+WHERE (customers.FirstName not in (
+    select employees.FirstName
+    from employees))
+GROUP BY customers.FirstName;
+
+SELECT FirstName
+FROM customers
+GROUP BY FirstName
+EXCEPT 
+SELECT FirstName FROM employees;
+
+#3
+Нет, данные запросы не вернут одинаковый результат. 
+a) Запрос 1 возвращает строки из таблицы t1, которые соответствуют условию t1.column1=0, а также соответствующие им строки из таблицы t2. Таким образом, результатом будут все строки из t1, удовлетворяющие условию, и их соответствующие строки из t2.
+b) Запрос 2 возвращает строки из таблицы t1, которые соответствуют условию t1.column1=0 и одновременно соединяются с таблицей t2 по условию t1.column1=t2.column1. Это означает, что в результате будут только те строки из t1, которые соответствуют обоим условиям и их соответствующие строки из t2.
+Количество строк, которое вернет каждый запрос, зависит от данных в таблицах. Возможно, что первый запрос вернет больше строк, так как он выбирает все строки из t1, удовлетворяющие условию t1.column1=0, в то время как второй запрос выберет только те строки из t1, которые также соединяются с таблицей t2 по условию t1.column1=t2.column1.
+
+#4
+
+SELECT albums.Title as 'Название альбома', COUNT(tracks.TrackId) as 'Количество треков'
+FROM albums
+JOIN tracks ON albums.AlbumId = tracks.AlbumId
+GROUP BY albums.AlbumId
+ORDER BY COUNT(tracks.TrackId) DESC;
+
+SELECT albums.Title as 'Название альбома', 
+(SELECT COUNT(tracks.TrackId) 
+FROM tracks 
+WHERE tracks.AlbumId = albums.AlbumId) as 'Количество треков'
+FROM albums
+ORDER BY 'Количество треков' DESC;
+
+#5
+
+SELECT customers.LastName as 'Фамилия', customers.FirstName as 'Имя'
+FROM customers
+JOIN sales ON customers.CustomerId = sales.CustomerId
+WHERE sales.ShipCity = 'Berlin' 
+AND strftime('%Y', SalesDate) == '2009' 
+AND customers.Country = 'Germany'
+
+#6
+
+SELECT customers.LastName, COUNT(sales.CustomerId) as 'Кол-во покупок'
+FROM customers
+JOIN sales ON customers.CustomerId = sales.CustomerId
+GROUP BY customers.CustomerId
+HAVING COUNT(sales.CustomerId) > 30;
+
+SELECT LastName, FirstName
+FROM customers
+WHERE CustomerId IN (
+    SELECT CustomerId 
+    FROM sales
+    GROUP BY CustomerId
+    HAVING COUNT(CustomerId) > 30
+);
+
+#7
+ 
+SELECT g.Name as 'Жанр', AVG(t.UnitPrice) as 'Средняя цена трека'
+FROM genres g
+JOIN tracks t ON g.GenreId = t.GenreId
+GROUP BY g.GenreId, g.Name;
+
+
+#8
+ 
+SELECT g.Name as 'Жанр', AVG(t.UnitPrice) as 'Средняя цена трека'
+FROM genres g
+JOIN tracks t ON g.GenreId = t.GenreId
+GROUP BY g.Name
+HAVING AVG(t.UnitPrice) > 1;
